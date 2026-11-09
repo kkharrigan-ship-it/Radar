@@ -1,0 +1,22 @@
+[
+  {
+    "id": "9000000000000000101",
+    "type": 0,
+    "channel_id": "9000000000000000501",
+    "content": "GMK Testbed Nº3 restock: Light Base, Novelties, now live",
+    "embeds": [],
+    "webhook_id": "9000000000000000701",
+    "author": {"id": "9000000000000000701", "username": "Example Vendor #announcements", "bot": true},
+    "flags": 2,
+    "message_reference": {"type": 1, "guild_id": "9000000000000000801", "channel_id": "9000000000000000802", "message_id": "9000000000000000803"}
+  },
+  {
+    "id": "9000000000000000100",
+    "type": 12,
+    "channel_id": "9000000000000000501",
+    "content": "9000000000000000702",
+    "embeds": [],
+    "author": {"id": "9000000000000000901", "username": "Someone"},
+    "message_reference": {"guild_id": "9000000000000000801", "channel_id": "9000000000000000802"}
+  }
+]

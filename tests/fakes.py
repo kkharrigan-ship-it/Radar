@@ -205,3 +205,50 @@ class FakeNotion:
         if op == "before":
             return value < arg
         raise AssertionError(f"FakeNotion: unsupported date filter {op}")
+
+
+# --- Discord -----------------------------------------------------------------
+
+import json as _json
+import urllib.parse as _up
+
+
+def discord_msg(id, type=0, content="", embeds=None, **extra) -> dict:
+    return {"id": str(id), "type": type, "content": content, "embeds": embeds or [],
+            "author": {"id": "9000000000000000999", "username": "someone"}, **extra}
+
+
+class FakeDiscord:
+    """A Transport that serves Discord channels like the real API: honours `after` and
+    `limit`, and returns newest first. Queue errors with `fail_next`."""
+
+    def __init__(self, channels: dict | None = None, guilds: dict | None = None):
+        self.channels = {k: list(v) for k, v in (channels or {}).items()}
+        self.guilds = guilds or {}
+        self.calls: list[str] = []
+        self._errors: list = []
+
+    def fail_next(self, *items) -> None:
+        self._errors.extend(items)
+
+    def request(self, method, url, headers, body, timeout):
+        self.calls.append(url)
+        self.last_headers = dict(headers)
+        if self._errors:
+            item = self._errors.pop(0)
+            if isinstance(item, BaseException):
+                raise item
+            return item
+        parts = _up.urlsplit(url)
+        path = parts.path.split("/")
+        channel = path[4]
+        if len(path) == 5:
+            return Response(200, {}, _json.dumps({"id": channel, "guild_id": self.guilds.get(channel)}).encode())
+        q = dict(_up.parse_qsl(parts.query))
+        msgs = sorted(self.channels.get(channel, []), key=lambda m: int(m["id"]))
+        if "after" in q:
+            msgs = [m for m in msgs if int(m["id"]) > int(q["after"])]
+            msgs = msgs[: int(q.get("limit", 50))]
+        else:
+            msgs = msgs[-int(q.get("limit", 50)):]
+        return Response(200, {}, _json.dumps(list(reversed(msgs))).encode())

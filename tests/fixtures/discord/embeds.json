@@ -1,0 +1,19 @@
+[
+  {
+    "id": "9000000000000000201",
+    "type": 0,
+    "channel_id": "9000000000000000501",
+    "content": "",
+    "embeds": [
+      {
+        "title": "Fauxmaker drop",
+        "description": "Cosmo Test v2 sculpts tonight",
+        "fields": [
+          {"name": "Price", "value": "$60"},
+          {"name": "Where", "value": "Example Vendor"}
+        ]
+      }
+    ],
+    "author": {"id": "9000000000000000902", "username": "Example Vendor bot"}
+  }
+]
