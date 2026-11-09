@@ -321,3 +321,19 @@ class FakePushover:
 
     def messages(self) -> list[str]:
         return [c.get("message", "") for c in self.calls]
+
+
+# --- one transport for a whole run ---------------------------------------------
+
+class RoutingTransport:
+    """Sends each request to the stand-in for its host."""
+
+    def __init__(self, discord=None, keebdex=None, pushover=None):
+        self.routes = {"discord.com": discord, "keebdex.org": keebdex, "api.pushover.net": pushover}
+
+    def request(self, method, url, headers, body, timeout):
+        host = _up.urlsplit(url).hostname
+        target = self.routes.get(host)
+        if target is None:
+            raise AssertionError(f"no stand-in for host {host}")
+        return target.request(method, url, headers, body, timeout)
