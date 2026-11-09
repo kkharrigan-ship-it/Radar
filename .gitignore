@@ -1,2 +1,5 @@
 # Raw saved pages hold real set names and IDs. Only scrubbed copies are committed.
 tests/fixtures/**/*.raw.html
+
+# Claude Code worktrees and local settings
+.claude/
