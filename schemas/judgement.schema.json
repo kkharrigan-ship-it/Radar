@@ -1,0 +1,38 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "status",
+    "unusable_reason",
+    "alert",
+    "match_type",
+    "item",
+    "set_name",
+    "kit_name",
+    "price_text",
+    "price_known",
+    "price_usd",
+    "fair_price_usd",
+    "price_basis",
+    "confidence",
+    "why",
+    "suspicious_text"
+  ],
+  "properties": {
+    "status": {"type": "string", "enum": ["ok", "unusable"]},
+    "unusable_reason": {"type": "string", "enum": ["", "empty", "not_a_listing", "unreadable", "other"]},
+    "alert": {"type": "boolean"},
+    "match_type": {"type": "string", "enum": ["wanted", "group_buy", "great_deal", "none"]},
+    "item": {"type": "string"},
+    "set_name": {"type": "string"},
+    "kit_name": {"type": "string"},
+    "price_text": {"type": "string"},
+    "price_known": {"type": "boolean"},
+    "price_usd": {"type": "number"},
+    "fair_price_usd": {"type": "number"},
+    "price_basis": {"type": "string", "enum": ["value_snapshot", "deal_log", "launch_price", "none"]},
+    "confidence": {"type": "string", "enum": ["low", "medium", "high"]},
+    "why": {"type": "string"},
+    "suspicious_text": {"type": "boolean"}
+  }
+}
