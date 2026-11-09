@@ -252,3 +252,28 @@ class FakeDiscord:
         else:
             msgs = msgs[-int(q.get("limit", 50)):]
         return Response(200, {}, _json.dumps(list(reversed(msgs))).encode())
+
+
+# --- Keebdex -----------------------------------------------------------------
+
+class FakeKeebdex:
+    """A Transport serving saved Keebdex pages by URL. Queue errors with `fail_next`."""
+
+    def __init__(self, pages: dict[str, str] | None = None):
+        self.pages = dict(pages or {})
+        self.calls: list[tuple[str, dict, float]] = []
+        self._errors: list = []
+
+    def fail_next(self, *items) -> None:
+        self._errors.extend(items)
+
+    def request(self, method, url, headers, body, timeout):
+        self.calls.append((url, dict(headers), timeout))
+        if self._errors:
+            item = self._errors.pop(0)
+            if isinstance(item, BaseException):
+                raise item
+            return item
+        if url not in self.pages:
+            return Response(404, {}, b"not found")
+        return Response(200, {"Content-Type": "text/html"}, self.pages[url].encode())
