@@ -101,20 +101,20 @@ class ReadSource(unittest.TestCase):
         self.assertEqual(r.newest_id, "900000000000000010")
 
     def test_100_then_3(self):
-        fake = FakeDiscord({CH: [discord_msg(9000000000000001000 + i, content="x") for i in range(103)]}, {CH: GUILD})
+        fake = FakeDiscord({CH: [discord_msg(9000000000000000300 + i, content="x") for i in range(103)]}, {CH: GUILD})
         r = self.read(fake)
         message_calls = [u for u in fake.calls if "/messages" in u]
         self.assertEqual(len(message_calls), 2)
-        self.assertIn("after=9000000000000001099", message_calls[1])
+        self.assertIn("after=9000000000000000399", message_calls[1])
         self.assertEqual(len(r.messages), 103)
-        self.assertEqual(r.newest_id, "9000000000000001102")
+        self.assertEqual(r.newest_id, "9000000000000000402")
 
     def test_at_most_five_pages(self):
-        fake = FakeDiscord({CH: [discord_msg(9000000000000001000 + i, content="x") for i in range(700)]}, {CH: GUILD})
-        r = self.read(fake)
+        fake = FakeDiscord({CH: [discord_msg(9000000000000000000 + i, content="x") for i in range(700)]}, {CH: GUILD})
+        r = self.read(fake, cursor="1")
         self.assertEqual(len([u for u in fake.calls if "/messages" in u]), 5)
         self.assertEqual(len(r.messages), 500)
-        self.assertEqual(r.newest_id, "9000000000000001499")
+        self.assertEqual(r.newest_id, "9000000000000000499")
 
     def test_rate_limit_short_wait(self):
         fake = FakeDiscord({CH: [discord_msg(9000000000000000060, content="hi")]}, {CH: GUILD})
