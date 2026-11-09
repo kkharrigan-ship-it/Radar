@@ -1,0 +1,19 @@
+{
+  "object": "list",
+  "results": [
+    {
+      "object": "page",
+      "id": "00000000-0000-4000-8000-000000000032",
+      "last_edited_time": "2026-11-08T14:05:00.000Z",
+      "properties": {
+        "Name": {"id": "title", "type": "title", "title": [{"type": "text", "text": {"content": "Keebdex live"}, "plain_text": "Keebdex live"}]},
+        "Kind": {"id": "a1", "type": "select", "select": null},
+        "Enabled": {"id": "a3", "type": "checkbox", "checkbox": false},
+        "Error Count": {"id": "a5", "type": "number", "number": null},
+        "Last OK": {"id": "a6", "type": "date", "date": null}
+      }
+    }
+  ],
+  "has_more": false,
+  "next_cursor": null
+}

@@ -1,0 +1,22 @@
+{
+  "object": "list",
+  "results": [
+    {
+      "object": "page",
+      "id": "00000000-0000-4000-8000-000000000031",
+      "last_edited_time": "2026-11-08T14:00:00.000Z",
+      "properties": {
+        "Name": {"id": "title", "type": "title", "title": [{"type": "text", "text": {"content": "Example Vendor"}, "plain_text": "Example Vendor"}, {"type": "text", "text": {"content": " #announcements"}, "plain_text": " #announcements"}]},
+        "Kind": {"id": "a1", "type": "select", "select": {"id": "s1", "name": "Discord channel", "color": "blue"}},
+        "Address": {"id": "a2", "type": "rich_text", "rich_text": [{"type": "text", "text": {"content": "9000000000000000501"}, "plain_text": "9000000000000000501"}]},
+        "Enabled": {"id": "a3", "type": "checkbox", "checkbox": true},
+        "Cursor": {"id": "a4", "type": "rich_text", "rich_text": []},
+        "Error Count": {"id": "a5", "type": "number", "number": 2},
+        "Last OK": {"id": "a6", "type": "date", "date": {"start": "2026-11-08T08:03:00.000-06:00", "end": null}},
+        "Set": {"id": "a7", "type": "relation", "relation": [{"id": "00000000-0000-4000-8000-000000000001"}], "has_more": false}
+      }
+    }
+  ],
+  "has_more": true,
+  "next_cursor": "00000000-0000-4000-8000-000000000099"
+}
