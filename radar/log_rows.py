@@ -46,14 +46,33 @@ class Source:
 
 def ensure_row(store, log_ds: str, row: dict, key: str) -> Literal["created", "exists"]:
     """Create the row only if no row has this Dedupe Key. Raises CreateFailed."""
+    return ensure_row_page(store, log_ds, row, key)[0]
+
+
+def ensure_row_page(store, log_ds: str, row: dict, key: str, now: datetime | None = None
+                    ) -> tuple[Literal["created", "exists"], Page | None]:
+    """As ensure_row, also giving the new row as a Page (None when it already existed)."""
     try:
         found = store.query(log_ds, {"property": c.LOG_DEDUPE_KEY, "rich_text": {"equals": key}})
         if found:
-            return "exists"
-        store.create(log_ds, {**row, c.LOG_DEDUPE_KEY: n.text(key)})
+            return "exists", None
+        props = {**row, c.LOG_DEDUPE_KEY: n.text(key)}
+        page_id = store.create(log_ds, props)
     except NotionUnavailable:
         raise CreateFailed() from None
-    return "created"
+    return "created", Page(page_id, props, now or datetime.now().astimezone())
+
+
+def system_row(key: str, words: str, now: datetime) -> tuple[str, dict]:
+    """A System row: Source Radar, Match Type System, Push pending, Confidence empty."""
+    props = _common(c.SOURCE_RADAR, c.SOURCE_RADAR, "", "", now, key)
+    props.update({
+        c.LOG_ALERT: n.title(cut(words, ALERT_MAX)),
+        c.LOG_STAGE: n.select(c.STAGE_PUSH_PENDING),
+        c.LOG_MATCH_TYPE: n.select(c.MATCH_SYSTEM),
+        c.LOG_WHY: n.text(words),
+    })
+    return key, props
 
 
 def cut(s: str, limit: int) -> str:
