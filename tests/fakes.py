@@ -277,3 +277,47 @@ class FakeKeebdex:
         if url not in self.pages:
             return Response(404, {}, b"not found")
         return Response(200, {"Content-Type": "text/html"}, self.pages[url].encode())
+
+
+# --- Pushover and settings ---------------------------------------------------
+
+from urllib.parse import parse_qs as _parse_qs
+from zoneinfo import ZoneInfo as _ZoneInfo
+
+from radar.config import Settings as _Settings
+
+
+def make_settings(tz: str = "America/Chicago") -> _Settings:
+    return _Settings(
+        notion_token="fake-notion-token", discord_token="fake-discord-token",
+        pushover_app="fake-app-token", pushover_user="fake-user-key",
+        log_ds="ds-log", sources_ds="ds-sources", sets_ds="ds-sets",
+        kits_ds="ds-kits", collection_ds="ds-collection", tz=_ZoneInfo(tz),
+    )
+
+
+class FakePushover:
+    """A Transport for Pushover. `responder(form)` returns a Response or raises; default accepts.
+    Each call's form is recorded as a dict of single values."""
+
+    OK = b'{"status":1,"request":"00000000-0000-4000-8000-000000000077"}'
+
+    def __init__(self, responder=None):
+        self.responder = responder
+        self.calls: list[dict] = []
+        self.urls: list[str] = []
+
+    def request(self, method, url, headers, body, timeout):
+        form = {k: v[0] for k, v in _parse_qs((body or b"").decode()).items()}
+        self.calls.append(form)
+        self.urls.append(url)
+        if self.responder:
+            result = self.responder(form)
+            if result is not None:
+                if isinstance(result, BaseException):
+                    raise result
+                return result
+        return Response(200, {}, self.OK)
+
+    def messages(self) -> list[str]:
+        return [c.get("message", "") for c in self.calls]
