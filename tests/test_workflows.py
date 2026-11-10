@@ -17,10 +17,13 @@ class FastLaneWorkflow(unittest.TestCase):
         self.assertRegex(self.text, r"(?m)^    timeout-minutes: 4$")
         self.assertRegex(self.text, r"(?m)^  contents: read$")
 
-    def test_only_the_schedule_triggers_it(self):
+    def test_only_the_schedule_and_the_run_button_trigger_it(self):
+        # workflow_dispatch is the manual Run workflow button. Only people with write
+        # access can press it, and it never runs code from a fork.
         on = self.text.split("\non:\n", 1)[1].split("\nconcurrency:", 1)[0]
         self.assertEqual(on.strip().splitlines()[0].strip(), "schedule:")
-        for trigger in ("push", "pull_request", "workflow_dispatch", "pull_request_target"):
+        self.assertRegex(on, r"(?m)^  workflow_dispatch: \{\}")
+        for trigger in ("push", "pull_request", "pull_request_target", "workflow_run", "repository_dispatch"):
             self.assertNotRegex(on, rf"(?m)^\s*{trigger}:")
 
     def test_ten_secrets_by_name_in_env(self):

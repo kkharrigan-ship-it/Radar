@@ -100,6 +100,22 @@ class Retry(unittest.TestCase):
         self.assertEqual(clock.sleeps, [])
         self.assertEqual(str(cm.exception), "notion 400")
 
+    def test_error_names_notions_code_but_not_its_message(self):
+        body = json.dumps({"object": "error", "status": 404, "code": "object_not_found",
+                           "message": f"Could not find data_source with ID: {DS}."}).encode()
+        c, _, _ = client(Response(404, {}, body))
+        with self.assertRaises(notion.NotionUnavailable) as cm:
+            c.query(DS)
+        self.assertEqual(str(cm.exception), "notion 404 object_not_found")
+
+    def test_odd_error_codes_are_dropped(self):
+        for code in ("Not A Code", "x" * 41, 7, DS):
+            with self.subTest(code=code):
+                c, _, _ = client(Response(401, {}, json.dumps({"code": code}).encode()))
+                with self.assertRaises(notion.NotionUnavailable) as cm:
+                    c.query(DS)
+                self.assertEqual(str(cm.exception), "notion 401")
+
     def test_error_words_hold_no_url_id_or_token(self):
         for script in ((Response(400),), (Response(503), Response(500)), (Timeout(), NoConnection())):
             c, _, _ = client(*script)

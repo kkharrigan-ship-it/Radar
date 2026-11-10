@@ -301,6 +301,13 @@ class Orchestrator(unittest.TestCase):
                     self.assertEqual(w.pushover.calls[0]["message"], "Radar can't reach Notion")
                 self.assertEqual(w.log(), [])
 
+    def test_notion_down_names_the_failing_part(self):
+        w = World(START.replace(minute=8))
+        w.notion.fail_next("query", n=1, when=lambda ds, props: ds == "ds-kits")
+        code, out = w.run()
+        self.assertEqual(code, 1)
+        self.assertIn("notion unavailable (notion unavailable at kits)", out)
+
     def test_failing_source_does_not_stop_others(self):
         w = World()
         bad = w.discord_source(name="Broken channel", channel=CH2)

@@ -5,6 +5,7 @@ Errors are plain words only: never a URL, an ID or the token.
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Protocol
@@ -36,6 +37,16 @@ class NotionStore(Protocol):
               sorts: list | None = None) -> list[Page]: ...
     def create(self, ds_id: str, props: dict) -> str: ...
     def update(self, page_id: str, props: dict) -> None: ...
+
+
+def _error_code(body: bytes) -> str:
+    """Notion's error code, such as `object_not_found`. Only a short lower-case word
+    is kept, never Notion's message, which can hold an ID."""
+    try:
+        code = json.loads(body or b"{}").get("code", "")
+    except (ValueError, AttributeError):
+        return ""
+    return code if isinstance(code, str) and re.fullmatch(r"[a-z_]{1,40}", code) else ""
 
 
 def _parse_time(s: str) -> datetime:
@@ -88,7 +99,7 @@ class NotionClient:
                     raise NotionUnavailable("notion bad reply") from None
             retryable = resp.status == 429 or resp.status >= 500
             if not retryable or attempt == 2:
-                raise NotionUnavailable(f"notion {resp.status}")
+                raise NotionUnavailable(f"notion {resp.status} {_error_code(resp.body)}".rstrip())
             self._clock.sleep(self._wait(resp))
         raise NotionUnavailable("notion unavailable")  # pragma: no cover
 

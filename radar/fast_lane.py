@@ -63,16 +63,23 @@ class Run:
 
     # -- F2 ------------------------------------------------------------------
 
+    def _query(self, part: str, ds_id: str, filter: dict | None = None) -> list[Page]:
+        """A load query that names its part (sources, kits, sets, collection) on failure."""
+        try:
+            return self.store.query(ds_id, filter)
+        except NotionUnavailable as e:
+            raise NotionUnavailable(f"{e} at {part}") from None
+
     def load(self) -> tuple[list[Source], Wanted, list[str]]:
-        s, st = self.s, self.store
-        sources = [Source.from_page(p) for p in st.query(
-            s.sources_ds, {"property": c.SRC_ENABLED, "checkbox": {"equals": True}})]
+        s, q = self.s, self._query
+        sources = [Source.from_page(p) for p in q(
+            "sources", s.sources_ds, {"property": c.SRC_ENABLED, "checkbox": {"equals": True}})]
         kits = [KitRow(p.id, n.read_title(p.props.get(c.KITS_NAME)), n.read_relation(p.props.get(c.KITS_SET)))
-                for p in st.query(s.kits_ds, {"property": c.KITS_STATUS, "select": {"equals": c.STATUS_WANTED}})]
+                for p in q("kits", s.kits_ds, {"property": c.KITS_STATUS, "select": {"equals": c.STATUS_WANTED}})]
         sets = [SetRow(p.id, n.read_title(p.props.get(c.SETS_NAME)), n.read_text(p.props.get(c.SETS_MAKER)),
-                       n.read_text(p.props.get(c.SETS_RADAR_TERMS))) for p in st.query(s.sets_ds)]
-        holdings = [HoldingRow(n.read_text(p.props.get(c.COLLECTION_MAKER))) for p in st.query(
-            s.collection_ds, {"or": [
+                       n.read_text(p.props.get(c.SETS_RADAR_TERMS))) for p in q("sets", s.sets_ds)]
+        holdings = [HoldingRow(n.read_text(p.props.get(c.COLLECTION_MAKER))) for p in q(
+            "collection", s.collection_ds, {"or": [
                 {"property": c.COLLECTION_HOLDING, "select": {"equals": c.HOLDING_OWNED}},
                 {"property": c.COLLECTION_HOLDING, "select": {"equals": c.HOLDING_ON_ORDER}}]})]
         wanted = build_wanted(sets, kits)
@@ -80,8 +87,8 @@ class Run:
             self.say(f"sets without terms {wanted.sets_without_terms}")
         return sources, wanted, build_taste_makers(sets, holdings)
 
-    def notion_down(self) -> int:
-        self.say("notion unavailable")
+    def notion_down(self, err: NotionUnavailable) -> int:
+        self.say(f"notion unavailable ({err})")
         if clk.local(self.clock.start, self.s.tz).minute < 5:
             push.send_pushover(self.transport, self.s.pushover_app, self.s.pushover_user,
                                f"Radar: {c.MATCH_SYSTEM}", NOTION_DOWN_WORDS, "")
@@ -94,15 +101,15 @@ class Run:
         self.say(words.lower())
         try:
             log_rows.source_error(self.store, src, words)
-        except NotionUnavailable:
-            self.say("notion unavailable")
+        except NotionUnavailable as e:
+            self.say(f"notion unavailable ({e})")
 
     def source_ok(self, src: Source, cursor: str | None = None) -> None:
         self.tally.sources_ok += 1
         try:
             log_rows.source_ok(self.store, src, self.now(), cursor)
-        except NotionUnavailable:
-            self.say("notion unavailable")
+        except NotionUnavailable as e:
+            self.say(f"notion unavailable ({e})")
 
     def save(self, key_props: tuple[str, dict]) -> None:
         key, props = key_props
@@ -158,8 +165,8 @@ class Run:
                          c.LOG_STAGE: n.select(c.STAGE_JUDGE_FAILED if failed else c.STAGE_TO_JUDGE)}
             try:
                 self.store.update(row.id, props)
-            except NotionUnavailable:
-                self.say("notion unavailable")
+            except NotionUnavailable as e:
+                self.say(f"notion unavailable ({e})")
                 continue
             if result == "fail" and n.read_select(props[c.LOG_STAGE]) == c.STAGE_JUDGE_FAILED:
                 self.judging_problem = True
@@ -225,8 +232,8 @@ class Run:
         """After F2, a Notion failure in one step is counted, printed, and the run moves on."""
         try:
             return fn(*args)
-        except NotionUnavailable:
-            self.say("notion unavailable")
+        except NotionUnavailable as e:
+            self.say(f"notion unavailable ({e})")
             return default
 
     # -- the run -------------------------------------------------------------
@@ -234,8 +241,8 @@ class Run:
     def go(self) -> int:
         try:
             sources, wanted, makers = self.load()
-        except NotionUnavailable:
-            return self.notion_down()
+        except NotionUnavailable as e:
+            return self.notion_down(e)
         for src in sources:
             if src.kind == c.KIND_DISCORD:
                 self.step(self.discord_source, src, wanted, makers)
