@@ -319,7 +319,7 @@ class Orchestrator(unittest.TestCase):
         code, out = w.run()
         self.assertEqual(code, 0)
         self.assertEqual(w.v(bad, "Error Count"), 1)
-        self.assertEqual(w.v(bad, "Last Error"), "Bot can't read this channel")
+        self.assertEqual(w.v(bad, "Last Error"), "Bot can't read this channel (403)")
         self.assertEqual(w.v(good, "Cursor"), "9000000000000000060")
         self.assertEqual(w.keys(), ["discord:9000000000000000060:gmk testbed no3", "keebdex:gmk testbed no3:closing"])
         self.assertIn("sources ok 2 failed 1", out)

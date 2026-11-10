@@ -239,6 +239,7 @@ class Run:
     # -- the run -------------------------------------------------------------
 
     def go(self) -> int:
+        push.last_problem = ""
         try:
             sources, wanted, makers = self.load()
         except NotionUnavailable as e:
@@ -253,6 +254,8 @@ class Run:
         cap_rows = self.step(self.pushes, default=[])
         self.step(self.clean)
         self.step(self.system_rows, sources, cap_rows)
+        if push.last_problem:
+            self.say(push.last_problem)
         self.say(self.tally.line(getattr(self.store, "calls", 0) - self.calls_at_start))
         return 0
 

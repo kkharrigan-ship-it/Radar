@@ -5,6 +5,7 @@ Steps F10, F11 and F12; gates G-F7 and G-F7b. Nothing is pushed without its Send
 from __future__ import annotations
 
 import json
+import re
 import urllib.parse
 from dataclasses import dataclass, field
 from datetime import timedelta
@@ -18,6 +19,10 @@ from .log_rows import CreateFailed, ensure_row_page, system_row
 from .notion import NotionUnavailable, Page
 
 PUSHOVER_URL = "https://api.pushover.net/1/messages.json"
+
+# Why the last send in this run failed, in plain words, such as "pushover 400 token invalid".
+# Printed once at the end of the run. Never holds a token, a key or Pushover's message text.
+last_problem = ""
 TIMEOUT = 10.0
 DAILY_CAP = 20
 MAX_ATTEMPTS = 3
@@ -48,19 +53,32 @@ def send_pushover(transport, app: str, user: str, title: str, message: str, url:
         form["url_title"] = "Open"
     body = urllib.parse.urlencode(form).encode()
     headers = {"Content-Type": "application/x-www-form-urlencoded"}
+    global last_problem
     try:
         resp = transport.request("POST", PUSHOVER_URL, headers, body, TIMEOUT)
     except Timeout:
+        last_problem = "pushover timeout"
         return Outcome.TIMEOUT
     except NoConnection:
-        return Outcome.ERROR
-    if resp.status != 200:
+        last_problem = "pushover unreachable"
         return Outcome.ERROR
     try:
-        ok = json.loads(resp.body).get("status") == 1
-    except (ValueError, AttributeError):
-        ok = False
-    return Outcome.ACCEPTED if ok else Outcome.ERROR
+        reply = json.loads(resp.body)
+    except ValueError:
+        reply = None
+    if resp.status == 200 and isinstance(reply, dict) and reply.get("status") == 1:
+        return Outcome.ACCEPTED
+    last_problem = f"pushover {resp.status} {_invalid_fields(reply)}".rstrip()
+    return Outcome.ERROR
+
+
+def _invalid_fields(reply) -> str:
+    """Pushover marks each bad field, such as {"token": "invalid"}. Only the field names are kept."""
+    if not isinstance(reply, dict):
+        return ""
+    bad = sorted(k for k, v in reply.items()
+                 if v == "invalid" and isinstance(k, str) and re.fullmatch(r"[a-z_]{1,20}", k))
+    return " ".join(f"{k} invalid" for k in bad)
 
 
 def is_system(row: Page) -> bool:

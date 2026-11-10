@@ -136,7 +136,8 @@ class ReadSource(unittest.TestCase):
         self.assertEqual(self.read(fake).error, "Discord rate limit")
 
     def test_errors(self):
-        cases = [(Response(403), "Bot can't read this channel"), (Response(401), "Bot can't read this channel"),
+        cases = [(Response(403), "Bot can't read this channel (403)"),
+                 (Response(401), "Discord rejected the bot token (401)"),
                  (Response(500), "Discord error 500"), (Timeout(), "Discord unreachable"),
                  (NoConnection(), "Discord unreachable")]
         for item, words in cases:

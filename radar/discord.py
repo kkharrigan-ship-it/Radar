@@ -21,7 +21,8 @@ READ_TYPES = {0, 19}          # DEFAULT, REPLY
 
 NO_TEXT = "Messages have no text: check the bot's Message Content setting"
 RATE_LIMIT = "Discord rate limit"
-FORBIDDEN = "Bot can't read this channel"
+FORBIDDEN = "Bot can't read this channel (403)"
+TOKEN_REJECTED = "Discord rejected the bot token (401)"
 UNREACHABLE = "Discord unreachable"
 
 
@@ -78,7 +79,9 @@ def _get(transport, clock, token: str, url: str):
                 clock.sleep(wait)
                 continue
             raise _Failed(RATE_LIMIT)
-        if resp.status in (401, 403):
+        if resp.status == 401:
+            raise _Failed(TOKEN_REJECTED)
+        if resp.status == 403:
             raise _Failed(FORBIDDEN)
         raise _Failed(f"Discord error {resp.status}")
     raise _Failed(RATE_LIMIT)  # pragma: no cover

@@ -39,6 +39,21 @@ class SendPushover(unittest.TestCase):
                 fake = FakePushover(lambda form, r=result: r)
                 self.assertEqual(push.send_pushover(fake, "app", "user", "t", "m", ""), outcome)
 
+    def test_last_problem_names_the_cause_in_plain_words(self):
+        cases = [(Response(400, {}, b'{"token":"invalid","errors":["application token is invalid, see https://pushover.net/api"],"status":0}'),
+                  "pushover 400 token invalid"),
+                 (Response(400, {}, b'{"user":"invalid","Weird Key":"invalid","status":0}'), "pushover 400 user invalid"),
+                 (Response(500), "pushover 500"), (Response(200, {}, b'{"status":0}'), "pushover 200"),
+                 (Timeout(), "pushover timeout"), (NoConnection(), "pushover unreachable")]
+        for result, words in cases:
+            with self.subTest(words=words):
+                push.last_problem = ""
+                push.send_pushover(FakePushover(lambda form, r=result: r), "app-secret", "user-secret", "t", "m", "")
+                self.assertEqual(push.last_problem, words)
+        push.last_problem = ""
+        push.send_pushover(FakePushover(lambda form: Response(200, {}, b'{"status":1}')), "a", "u", "t", "m", "")
+        self.assertEqual(push.last_problem, "")
+
     def test_form_and_limits(self):
         fake = FakePushover()
         push.send_pushover(fake, "app", "user", "T" * 300, "M" * 2000, "https://x.invalid/" + "u" * 600)
